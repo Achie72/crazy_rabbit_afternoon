@@ -1,5 +1,19 @@
 [Try it out in the browser](https://achie72.github.io/crazy_rabbit_afternoon/)
 
+# How to play
+
+__Start__: C/Z/Y (builtin differs on keyboard layouts, the button next to 'x')
+
+__Move__: Arrows, you can step twice while wolves moves once.
+
+__Skip step__: X
+
+Collect all carrots to proceed to the next level. Avoid wolves, by hiding in the rabbit holes.  You can step twice, while wolves step one.
+
+If they can't see you, they are dark red, and start to wander around. If the can, they turn bright red, and start to chase you down. They can't eat you, while you are in a rabbit hole.
+
+Difficulty goes up by reached levels and steps taken, so plan ahead!
+
 # General Idea
 Create and oldschool rogue-like feel puzzle game.
 
