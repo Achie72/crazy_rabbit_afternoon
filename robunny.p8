@@ -500,24 +500,19 @@ function _update()
         if btnp(5) then
           pressed_button +=1
           global.steps +=1
-        end
-        
-        if btnp(0) then
+        elseif btnp(0) then
           new_x = player.x - 1
           pressed_button +=1
           global.steps +=1
-        end
-        if btnp(1) then
+        elseif btnp(1) then
           new_x = player.x + 1
           pressed_button +=1
           global.steps +=1
-        end
-        if btnp(2) then
+       elseif btnp(2) then
           new_y = player.y - 1
           pressed_button +=1
           global.steps +=1
-        end
-        if btnp(3) then
+       elseif btnp(3) then
           new_y = player.y + 1
           pressed_button +=1
           global.steps +=1
@@ -538,8 +533,6 @@ function _update()
           end
         end
       end
-
-
 
       -- move enemies if player did 2 steps
       while pressed_button == 2 do
