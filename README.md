@@ -1,4 +1,7 @@
+[Try it out in the browser](https://achie72.github.io/crazy_rabbit_afternoon/)
+
 # General Idea
+Create and oldschool rogue-like feel puzzle game.
 
 # Assets, Architecture  
 ## Player  
