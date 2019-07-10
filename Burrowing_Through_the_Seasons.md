@@ -1,6 +1,7 @@
 # New mechanics:
 ## Season
 The game now support for `Seasons`, Summer, Fall, Winter, Spring. Each of these has an own tileset, and modifiers for the game:
+
 |                 |Summer|Fall  |Winter|Spring |
 |-----------------|------|------|------|-------|
 |Number of Burrows|Normal|Less  |Normal|Least  |
