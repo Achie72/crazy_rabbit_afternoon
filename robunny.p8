@@ -12,57 +12,103 @@ global = {
  state = 0, -- 0 for menu, 1 for game
  steps = 0,
  step_overflow_1 = 0,
- step_overflow_2 = 0
+ step_overflow_2 = 0,
+ brw_movement = 0
 }
+
+trees = {1,2,3,4}
+grounds = {5,6,7,8}
+burrow = 9
+burrow_highlight = 10
+
+season = 3 -- 1 summer, 2 fall, 3 winter, 4 spring
+season_duration = 50
+next_season = 0
+seasonal_movement = {2,2,2,2}
+seasonal_burrows = {0.05,0.04,0.05,0.01}
+seasonal_carrots = {0.05,0.02,0.01,0.03}
+seasonal_change = 0
 
 pressed_button = 0
 lost = 0
+carrot = 63
+paw = 48
 
 wolves={}
+burrows={}
 
 player={
   x = -1,
   y = -1,
   placed = 0
 }
+idx = 1
+old_idx = 1
+selecting = 0
+stats = 0
 
 function _init()
+ -- export("music.wav")
+ --music(0)
+  menuitem(2,"stats", show_stats)
+end
+
+function show_stats()
+  stats = 1
+end
+
+function init_game()
+
   lost = 0
   wolves = {}
+  burrows = {}
   player.x = -1
   player.y = -1
   player.placed = 0
   global.carrot_left = 0
+  
+  calculate_seasons()
   cls()
 
   for x=0,global.mapsize-1 do
     for y=0,global.mapsize-2 do
-      mset(x,y,1)
+      mset(x,y,trees[season])
     end
   end
   dig(0,0,0.5,400)
   dig(8,8,0.5,400)
   dig(4,4,0.5,100)
-  place_rabbit_holes(0.05)
-  place_carrots(0.03)
+  place_rabbit_holes(seasonal_burrows[season])
+  place_carrots(seasonal_carrots[season])
 
   for x=0,global.mapsize-1 do
     for y=0,global.mapsize-2 do
-      if mget(x,y) == 4 then
+      if mget(x,y) == carrot then
         global.carrot_left += 1
       end
     end
   end
-  place_wolves(0.03)
+  place_wolves(0.05)
   place_player()
+  if (global.steps > 1) and ((global.steps%100) == 0) then
+    season += 1
+    if season > 4 then
+      season = 1
+    end
+  end
 end
 
 function place_rabbit_holes(probability)
   for x=0,global.mapsize-1 do
     for y=0,global.mapsize-2 do
       rng = rnd(1)
-      if (rng <= probability) and (mget(x,y) == 2) then
-        mset(x,y,3)
+      if (rng <= probability) and (mget(x,y) == grounds[season]) then
+        local brw = {
+          x = x,
+          y = y
+        }
+        add(burrows,brw)
+        mset(x,y,burrow)
       end
     end
   end
@@ -74,8 +120,8 @@ function place_carrots(probability)
     for x=0,global.mapsize-1 do
       for y=0,global.mapsize-2 do
         rng = rnd(1)
-        if (rng <= probability) and (mget(x,y) == 2) then
-          mset(x,y,4)
+        if (rng <= probability) and (mget(x,y) == grounds[season]) then
+          mset(x,y,carrot)
           carrot_number += 1
         end
       end
@@ -83,18 +129,26 @@ function place_carrots(probability)
   end
 end
 
-function place_wolves(probability)
-  
-  while #wolves <= flr(flr(global.current_level/5) + global.difficulty) do
+function place_wolves(probability,season_multiplier)
+  local wolf_number
+  if season == 3 then
+    wolf_number = flr((global.current_level/5) + global.difficulty)/2
+    if wolf_number < 1 then 
+      wolf_number = 1
+    end
+  else
+   wolf_number = flr((global.current_level/5) + global.difficulty)
+  end
+  while #wolves <= wolf_number do
     x_rand = flr(rnd(15)) + 1
     y_rand = flr(rnd(14)) + 1
     if not ((x_rand < 0) or (x_rand > 15) or (y_rand < 0) or (y_rand > 14)) then
       rng = rnd(1)
-      if (rng <= probability) and (mget(x_rand,y_rand) == 2) then
+      if (rng <= probability) and (mget(x_rand,y_rand) == grounds[season]) then
         local wolf = {
           x = x_rand,
           y = y_rand,
-          spr = 32
+          spr = 33
         }
         add(wolves,wolf)
       end
@@ -107,7 +161,7 @@ function place_player()
     x_rand = flr(rnd(15)) + 1
     y_rand = flr(rnd(14)) + 1
     if not ((x_rand < 0) or (x_rand > 15) or (y_rand < 0) or (y_rand > 14)) then
-      if (mget(x_rand,y_rand) == 3) then
+      if (mget(x_rand,y_rand) == burrow) then
         player.x = x_rand
         player.y = y_rand
         player.placed = 1
@@ -171,16 +225,16 @@ function dig(x_start,y_start,t,s)
     end
     done = done + 1
     draw = rnd(1)
-    mset(x,y,2)
+    mset(x,y,grounds[season])
     outside = true
   end
 end
 
 
 function check_carrot()
-  if (mget(player.x,player.y) == 4) then
+  if (mget(player.x,player.y) == carrot) then
     sfx(0)
-    mset(player.x,player.y,2)
+    mset(player.x,player.y,grounds[season])
     global.score +=1
     global.carrot_left -= 1
   end
@@ -188,7 +242,7 @@ end
 
 function line_of_sight(x0,y0,x1,y1)
 
-  if(mget(x0,y0) == 3) then
+  if(mget(x0,y0) == burrow) then
     return false
   end
 
@@ -212,7 +266,7 @@ function line_of_sight(x0,y0,x1,y1)
 
   local err, e2 = dx-dy, nil
 
-  if (mget(x0, y0) == 1) then return false end
+  if (mget(x0, y0) == trees[season]) then return false end
 
   while not(x0 == x1 and y0 == y1) do
     e2 = err + err
@@ -224,7 +278,7 @@ function line_of_sight(x0,y0,x1,y1)
       err = err + dx
       y0  = y0 + sy
     end
-    if (mget(x0, y0) == 1) then return false end
+    if (mget(x0, y0) == trees[season]) then return false end
   end
 
   return true
@@ -282,7 +336,7 @@ function move_wolves()
         if ((wolf.x+step_x < 0) or (wolf.x+step_x > 15) or (wolf.y+step_y < 0) or (wolf.y+step_y > 14)) then
           outside = true
         else
-          if not (mget(wolf.x+step_x,wolf.y+step_y) == 1) then
+          if not (mget(wolf.x+step_x,wolf.y+step_y) == trees[season]) then
            outside = false
           end
           end
@@ -291,8 +345,7 @@ function move_wolves()
       wolf.y += step_y
     end
     if (player.x == wolf.x) and (player.y == wolf.y) then
-      printh("on it")
-      if not (mget(player.x,player.y) == 3) then
+      if not (mget(player.x,player.y) == burrow) then
         lost = 1
       end
     end
@@ -461,10 +514,19 @@ function manhattan_distance(a, b)
  return abs(a.x - b.x) + abs(a.y - b.y)
 end
 
+function calculate_seasons()
+  if (global.steps > next_season) then
+    next_season = global.steps + season_duration
+    season += 1
+    seasonal_change = 1
+    if season > 4 then
+      season =1
+    end
+  end
+end
+
 function calculate_difficulty()
-  global.difficulty = 1 + (global.steps/100) + (global.step_overflow_1*100) + (global.step_overflow_2*1000)
-  printh(global.difficulty)
-  printh(flr(flr(global.current_level/5) + global.difficulty))
+  global.difficulty = 1 + (global.steps/100) + (global.step_overflow_1*100) + (global.step_overflow_2*1000) + global.brw_movement
 end
 
 
@@ -472,83 +534,144 @@ function _update()
   --printh("lost: "..lost.." state: "..global.state)
   if global.state == 0 then
     if btnp(4) then
+      season = 1
+      global.difficulty = 1
       global.state = 1
-      _init()
+      steps = 0
+      step_overflow_1 = 0
+      step_overflow_2 = 0
+      global.score = 0
+      init_game()
     end
-  else 
+  else
     if not (lost == 1) then
-
-      calculate_difficulty()
-
-      if global.steps > 3270 then
-        global.steps = 0
-        global.step_overflow_1 += 1
-      end
-      if global.step_overflow_1 > 3270 then
-        global.step_overflow_1 = 0
-        global.step_overflow_2 += 1
-      end
-
-      new_x = player.x
-      new_y = player.y
-      --printh("miva")
-      -- player turn for up to two movement
+    
+      if stats == 1 then
         if btnp(4) then
-          --_init()
-          --global.current_level +=1
+          stats = 0
+        end
+      elseif selecting == 1 then 
+        mset(burrows[idx].x,burrows[idx].y,burrow)
+        if btnp(0) then
+          idx -= 1
+          if (idx < 1) idx = #burrows
+        elseif btnp(1) then
+          idx += 1
+          if (idx > #burrows) idx = 1
+        end
+        if btnp(4) then
+          global.brw_movement += 0.2
+          selecting = 0
+          mset(burrows[idx].x,burrows[idx].y, grounds[season])
+          player.x = burrows[idx].x
+          player.y = burrows[idx].y
+          del(burrows,burrows[idx])
+        else
+          mset(burrows[idx].x,burrows[idx].y,burrow_highlight)
         end
         if btnp(5) then
-          pressed_button +=1
-          global.steps +=1
-        elseif btnp(0) then
-          new_x = player.x - 1
-          pressed_button +=1
-          global.steps +=1
-        elseif btnp(1) then
-          new_x = player.x + 1
-          pressed_button +=1
-          global.steps +=1
-       elseif btnp(2) then
-          new_y = player.y - 1
-          pressed_button +=1
-          global.steps +=1
-       elseif btnp(3) then
-          new_y = player.y + 1
-          pressed_button +=1
-          global.steps +=1
+          local brw = {
+            x = player.x,
+            y = player.y
+          }
+          add(burrows,brw)
+          mset(player.x,player.y,burrow)
+          mset(burrows[idx].x,burrows[idx].y,burrow)
+          selecting = 0
+        end
+      elseif seasonal_change == 1 then
+        if btnp(4) then
+          seasonal_change = 0
+        end
+      else
+        calculate_difficulty()
+
+        if global.steps > 3270 then
+          global.steps = 0
+          global.step_overflow_1 += 1
+        end
+        if global.step_overflow_1 > 3270 then
+          global.step_overflow_1 = 0
+          global.step_overflow_2 += 1
         end
 
-      -- move player if valid movement
-      if (not (mget(new_x,new_y) == 1)) then
-        if not ((new_x < 0) or (new_x > 15) or (new_y < 0) or (new_y > 14)) then
-          player.x = new_x
-          player.y = new_y
-        end
-      end
+        new_x = player.x
+        new_y = player.y
+        --printh("miva")
+        -- player turn for up to two movement
+  --       if btnp(4) then
+  --        season += 1
+  --          if season > 4 then
+  --            season = 1
+  --          end
+  --          init_game()
+  --        end
+          if btnp(5) then
+            pressed_button +=1
+            global.steps +=1
+          elseif btnp(0) then
+            new_x = player.x - 1
+            pressed_button +=1
+            global.steps +=1
+          elseif btnp(1) then
+            new_x = player.x + 1
+            pressed_button +=1
+            global.steps +=1
+         elseif btnp(2) then
+            new_y = player.y - 1
+            pressed_button +=1
+            global.steps +=1
+         elseif btnp(3) then
+            new_y = player.y + 1
+            pressed_button +=1
+            global.steps +=1
+          end
+          if (mget(player.x,player.y) == burrow) or (mget(player.x,player.y) == burrow_highlight) then
+            if btnp(4) then
+              mset(player.x,player.y,grounds[season])
+              for brw in all(burrows) do
+                if (player.x == brw.x) and (player.y == brw.y) then
+                  del(burrows,brw)
+                end
+              end
+              selecting = 1
+              idx = 1
+              old_idx = 1
+            end
+          end
 
-     for wolf in all(wolves) do
-        if (player.x == wolf.x) and (player.y == wolf.y) then
-          if not (mget(player.x,player.y) == 3) then    
-            lost = 1
+        -- move player if valid movement
+        if (not (mget(new_x,new_y) == trees[season])) then
+          if not ((new_x < 0) or (new_x > 15) or (new_y < 0) or (new_y > 14)) then
+            player.x = new_x
+            player.y = new_y
           end
         end
-      end
 
-      -- move enemies if player did 2 steps
-      while pressed_button == 2 do
-        move_wolves()
-        pressed_button = 0
-      end
+       for wolf in all(wolves) do
+          if (player.x == wolf.x) and (player.y == wolf.y) then
+            if not (mget(player.x,player.y) == burrow) then    
+              lost = 1
+            end
+          end
+        end
 
-      check_carrot()
+        -- move enemies if player did 2 steps
+        while (pressed_button == seasonal_movement[season]) and not (lost == 1) do
+          move_wolves()
+          pressed_button = 0
+        end
 
-      if(global.carrot_left == 0) then
-      global.current_level += 1
-        _init()
-      end
+        check_carrot()
 
-      for wolf in all(wolves) do
-        wolf_sight(wolf)
+        if(global.carrot_left == 0) then
+        global.current_level += 1
+          init_game()
+        end
+
+        for wolf in all(wolves) do
+          wolf_sight(wolf)
+        end
       end
     else
       if btnp(4) then
@@ -567,14 +690,27 @@ end
 
 function _draw()
   if lost == 1 then
-    rectfill(32,60,96,81,7)
-    rectfill(33,61,95,80,0)
-    print("you got eaten!",38,64,8)
-
-    if(time()%2 < 1) then
-      print("- \142 -",55,72,8)
-    end
-
+      rectfill(32,32,102,91,7)
+      rectfill(33,33,101,90,0)
+      print("you got eaten: ",38,34,8)
+      rectfill(33,42,102,42,7)
+      print("score: "..global.score,34,44,7)
+      print("diff: "..global.difficulty,34,53,7)
+      print("steps: "..global.steps,34,62,7)
+      local s
+      if season == 1 then
+        s = "summer"
+      elseif season == 2 then
+        s = "fall"
+      elseif season == 3 then
+        s = "winter"
+      elseif season == 4 then
+        s = "spring"
+      end
+      print("season: "..s,34,71,7)
+      if(time()%2 < 1) then
+        print("- \142 -",55,80,8)
+      end
   else
     cls()
     if global.state == 0 then
@@ -582,20 +718,13 @@ function _draw()
     else
       map()
       for wolf in all(wolves) do
-        spr(63,wolf.x*8,wolf.y*8)
         spr(wolf.spr,wolf.x*8,wolf.y*8)
       end
       if(mget(player.x,player.y) == 3) then
         spr(17,player.x*8,player.y*8)
-        --printh("on")
-        --printh(player.x.." "..player.y)
-        --printh(mget(player.x,player.y))
       else
         spr(16,player.x*8,player.y*8)
-        --printh("off")
-        --printh(player.x.." "..player.y)
       end
-      --print(global.score)
       for paw in all(paws) do
         spr(paw.spr,paw.x,paw.y)
       end
@@ -606,13 +735,70 @@ function _draw()
 end
 
 function draw_ui()
-  print("ate: "..global.score,0,120,9)
-  print("|",38,120,7)
-  print("lvl: "..global.current_level,42,120,9)
-  print("|",72,120,7)
-  print("left: "..global.carrot_left,76,120,9)
-  print("| "..pressed_button,110,120,7)
-  --print("step: "..pressed_button,96,120,9)
+  if selecting == 1 then
+    print("⬅️➡️:prv/nxt",0,120,9)
+    print("|",52,120,7)
+    print("\142:select",56,120,9)
+    print("|",92,120,7)
+    print("\151:exit",96,120,9)
+  elseif seasonal_change == 1 then
+    rectfill(32,32,102,91,7)
+    rectfill(33,33,101,90,0)
+    print("season info: ",38,34,9)
+    rectfill(33,42,102,42,7)
+    seasonal_movement = {2,2,1,2}
+    seasonal_burrows = {0.05,0.04,0.03,0.01}
+    seasonal_carrots = {0.05,0.02,0.01,0.03}
+    seasonal_wolfs = {0.05,0.04,0.04,0.02}
+
+    if season == 1 then
+      print("avg burrows",34,44,7)
+      print("avg carrots",34,54,7)
+      print("avg wolves",34,64,7)
+    elseif season == 2 then
+      print("less burrows",34,44,7)
+      print("less carrots",34,54,7)
+      print("less wolves",34,64,7)
+    elseif season == 3 then
+      print("less burrows",34,44,7)
+      print("least carrots",34,54,7)
+      print("less wolves",34,64,7)
+    elseif season == 4 then
+      print("least burrows",34,44,7)
+      print("less carrots",34,54,7)
+      print("least wolves",34,64,7)
+    end
+    print("- \142 -",55,80,9)
+  else
+    print("ate: "..global.score,0,120,9)
+    print("|",38,120,7)
+    print("lvl: "..global.current_level,42,120,9)
+    print("|",72,120,7)
+    print("left: "..global.carrot_left,76,120,9)
+    print("| "..pressed_button,110,120,7)
+    --print("step: "..pressed_button,96,120,9)
+  end
+  if stats == 1 then
+    rectfill(32,32,102,91,7)
+    rectfill(33,33,101,90,0)
+    print("current status: ",38,34,9)
+    rectfill(33,42,102,42,7)
+    print("score: "..global.score,34,44,7)
+    print("diff: "..global.difficulty,34,53,7)
+    print("steps: "..global.steps,34,62,7)
+    local s
+    if season == 1 then
+      s = "summer"
+    elseif season == 2 then
+      s = "fall"
+    elseif season == 3 then
+      s = "winter"
+    elseif season == 4 then
+      s = "spring"
+    end
+    print("season: "..s,34,71,7)
+    print("- \142 -",55,80,9)
+  end
 end
 
 function draw_menu()
@@ -642,13 +828,13 @@ end
 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000003030000005000000000000bb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000000030000000000000000000b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000030303330500000000055000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000300400000400000500500009900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700033300400000000000500500000900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000004000000000000005055050000900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000003030000040900000706000009030000003000000050000000600000004000000000000000000000000000000000000000000000000000000000
+00700700000000030000000900000006000000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000030303330409099907060666080303330300000005000000060000000300000000055000000990000000000000000000000000000000000000000000
+00077000000300400009004000060040000300400000400000004000000050000000500000500500009009000000000000000000000000000000000000000000
+00700700033300400999004006660040033300400000000000000000000000000000000000500500009009000000000000000000000000000000000000000000
+00000000004000000040000000400000004000000000000000000000000000000000000005055050090990900000000000000000000000000000000000000000
+00000000004000000040000000400000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0077077000dd0dd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0070070000d00d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0070070000d00d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -657,21 +843,21 @@ __gfx__
 0070700000d0d0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0077070000dd0d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0077770000dddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000800008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000880088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00220220008808800880088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00020200000808008088880800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00202020008080808008800800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00222220008888800888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00020200000808000080080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00002000000080000008800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00220220008808800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00020200000808000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00202020008080800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00222220008888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00020200000808000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00002000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00080800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-08000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00088800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00088800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000bb000
+000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b0000
+00002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00200020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000990000
+00002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000090000
+00022200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000090000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00007777707777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -700,11 +886,11 @@ __gfx__
 00007770677776777767770999000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00077777677767777776770999000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00077777677767777777670999000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00007777677677777777666777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00007777677677777777666660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00007777767677777776777776700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000777767677777777777767700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000006677777777777776000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000066777777777767000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000006677777767777776000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000066666606666667000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
@@ -836,7 +1022,7 @@ dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 
 __gff__
-0001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0001010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -857,17 +1043,17 @@ __map__
 0000000000002400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 00010000060100602005020050200502006030060300704008040090500c0500d05011050160501e05026050290503a0003f0001c70017700167001670018700197001a7001a7001a70019700177001470012700
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+011001001d0501d050000001f0500000021050000001f0501f050000001d0502405021050000001f0501d05021050210001d0501f0501f050210501f0501d0501d0001d000000000000000000000000000000000
+011000000f0531255314553000000f0531255314553000000f0531255314553000000f0531255314553000000f053125531455300000000000000000000000000000000000000000000000000000000000000000
+011000000000000000000001b0531b0530000003055030550000000000000001b0531b0530000003055030550000000000000001b0531b0530000003055030550000000000000001b0531b053000000305503055
+011000000000020055220550805500000060550805500000000002005522055080550000006055080550000000000200552205508055000000605508055000000000020055220550805500000060550805500000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000060700000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
-00 41424344
-00 41424344
-00 41424344
-00 41424344
+01 01024344
+01 02424344
+01 02034344
+02 01030444
 00 41424344
 00 41424344
 00 06424344
