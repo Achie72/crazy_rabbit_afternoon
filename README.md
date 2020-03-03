@@ -86,3 +86,8 @@ If the __Wolf__ and the __Player__ are on the same tile, and the __Player__ is n
 - The menu screen is loaded, by pressing the secondary action button.
 ## Menu
 A Title screen is shown. By pressing the secondary action button the __Player__ starts the game.
+
+---  
+**Social media:**  
+[Follow me on Twitter](https://twitter.com/Achie7240)  
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L81GBPX)
