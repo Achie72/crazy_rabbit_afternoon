@@ -746,10 +746,6 @@ function draw_ui()
     rectfill(33,33,101,90,0)
     print("season info: ",38,34,9)
     rectfill(33,42,102,42,7)
-    seasonal_movement = {2,2,1,2}
-    seasonal_burrows = {0.05,0.04,0.03,0.01}
-    seasonal_carrots = {0.05,0.02,0.01,0.03}
-    seasonal_wolfs = {0.05,0.04,0.04,0.02}
 
     if season == 1 then
       print("avg burrows",34,44,7)
