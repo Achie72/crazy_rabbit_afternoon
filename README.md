@@ -1,5 +1,7 @@
 [Try it out in the browser](https://achie72.github.io/crazy_rabbit_afternoon/)
 
+Or just download your wanted executable from the `exports` directory.
+
 # How to play
 
 __Start__: C/Z/Y (builtin differs on keyboard layouts, the button next to 'x')
