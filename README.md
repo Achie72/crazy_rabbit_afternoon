@@ -1,3 +1,5 @@
+![alt text](https://img.itch.zone/aW1hZ2UvNDQwMDI1LzIyMTE4MDUuZ2lm/347x500/aTQB0O.gif)
+
 [Try it out in the browser](https://achie72.github.io/crazy_rabbit_afternoon/)
 
 Or just download your wanted executable from the `exports` directory.
@@ -35,10 +37,10 @@ Moving around, and picking up all __Carrots__ on the map.
 ## Movement  
 The __Player__ is capable of moving 2 tiles per turn, while the __Wolves__ can only move one.
 ## Maps  
-Randomly generated: 
-- contiguous __Field__ tiles, mixed with __Forest__ tiles indicating walls. 
-- Randomly placed __Rabbit Holes__ 
-- Randomly placed,`x` > 0 number of __Carrots__. 
+Randomly generated:
+- contiguous __Field__ tiles, mixed with __Forest__ tiles indicating walls.
+- Randomly placed __Rabbit Holes__
+- Randomly placed,`x` > 0 number of __Carrots__.
 __Player__ randomly placed on one of the __Rabbit Holes__ to give time for movement and strategies.
 __Wolves__ randomly placed, numbers calculated by difficulty.
 
@@ -65,7 +67,7 @@ Inidcates the goal carrots, that the player must pick up, to proceed to the next
 - Carrot dissapears
 - Score goes up
 - Carrot Counter goes down
-### Wolves 
+### Wolves
 __Eating the Player__: If the __Wolf__ and the __Player__ are on the same tile, and the __Player__ is not inside a __Rabbit Hole__, then the __Wolf__ eats the __Player__:
 - A sound is played indicating the end of the game.
 - A score is shown, showing the number of __Carrots__ picked up, and the number of levels cleared.  
@@ -90,6 +92,22 @@ If the __Wolf__ and the __Player__ are on the same tile, and the __Player__ is n
 A Title screen is shown. By pressing the secondary action button the __Player__ starts the game.
 
 ---  
-**Social media:**  
-[Follow me on Twitter](https://twitter.com/Achie7240)  
+
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L4L81GBPX)
+
+**Social media:**  
+
+Other social sites:  
+🐦 [Twitter](https://twitter.com/Achie7240)  
+📷 [Instagram](https://www.instagram.com/justanerdlife/)  
+🎥 [Twitch](https://www.twitch.tv/achie7240)  
+🎬 [YouTube](https://www.youtube.com/channel/UCzWXrvo-Pj7_KDv4w4q-4Kg)  
+
+
+Games and devlogs i made:
+⌨️ [GitHub repos](https://github.com/Achie72)  
+🎮 [Itch.io](https://achie.itch.io/)  
+🕹️ [Newgrounds](https://achie72.newgrounds.com/)  
+
+All my links in one place:  
+🌳 [Linktr.ee](https://linktr.ee/AchieGameDev)  
